@@ -1,0 +1,11 @@
+{
+  "name": "excel2pulse",
+  "version": "0.0.1",
+  "description": "Loads data from excel files into TrueSight pulse",
+  "main": "excel2pulse.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Martin Tauber",
+  "license": "ISC"
+}
