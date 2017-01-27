@@ -6,6 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Martin Tauber",
-  "license": "ISC"
+  "repository" :
+    { "type" : "git",
+      "url" : "https://github.com/tsguru/excel2pulse"
+    },
+  "author": "Martin Tauber" <martin.tauber@truesight.guru> (http://www.truesight.guru),
+  "license": "ISC",
+  "dependencies": {
+    "xlsx": "^0.8.1"
+  }
 }
