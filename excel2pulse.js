@@ -1,11 +1,36 @@
 var XLSX = require('xlsx');
 var https = require('https');
 
+/**
+ * This class implements the interface to TrueSight Pulse. You need to
+ * instanciate this class to be able to communicate with the TrueSight pulse
+ * server. During the instanciatetion you need to specify the options
+ *   email - the email address used to identify at the truesight server
+ *   apiToken - the apiToken used to identify at the truesight server
+ *
+ * optionally you can specify the following options:
+ *   hostname - the hostname of the truesight server
+ *   port - the portnumber of the truesight server
+ *   handler - the handler to be used to handle requests, responces and errors
+ *
+ * @class
+ * @constructor
+ * @param {object} options
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
 function TSPulseAPI(options) {
   this.email = options.email;
   this.apiToken = options.apiToken;
-  this.hostname = typeof options.hostname !== 'undefined' ? options.hostname : 'api.truesight.bmc.com';
-  this.port = typeof options.port !== 'undefined' ? options.port : 443;
+  this.hostname = options.hostname != undefined ? options.hostname : 'api.truesight.bmc.com';
+  this.port = options.port != undefined ? options.port : 443;
+  this.handler = options.handler != undefined ? options.handler : new TSPulseAPIDefaultHandler();
+
+  this.statistics = {
+    totalNumberOfRequests: 0,
+    totalNumberOfResponces: 0
+  }
+
+  var self=this;
 
   this.options = {
     protocol: 'https:',
@@ -18,28 +43,20 @@ function TSPulseAPI(options) {
   };
 
   this._request = function(data) {
-
-    var request = https.request(this.options, function(result) {
-      numberOfResults++;
-
-  //    if (numberOfResults % 10 == 0) console.log(new Date() + " processed " + numberOfResults + " results ...");
-
-      if (result.statusCode >= 400) {
-        console.log('Status: ' + result.statusCode);
-        console.log('Headers: ' + JSON.stringify(result.headers));
-        result.setEncoding('utf8');
-        result.on('data', function (body) {
-          console.log('Body: ' + body);
-        });
-      }
+    var request = https.request(self.options, function(result) {
+      self.statistics.totalNumberOfResponces++;
+      self.handler.handleResponce(self, result);
     });
 
     request.on('error', function(e) {
-      console.log('problem with request: ' + e.message);
+      self.handler.handleError(e);
     });
 
     request.write(JSON.stringify(data));
     request.end();
+
+    self.statistics.totalNumberOfRequests++;
+    self.handler.handleRequest(self);
   }
 }
 
@@ -50,8 +67,6 @@ TSPulseAPI.prototype.createEvent = function(data) {
   this._request(data);
 }
 
-var numberOfResults = 0;
-
 /**
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
@@ -60,13 +75,14 @@ TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
   var min = options.min == undefined ? 50 : options.min;
   var max = options.max == undefined ? 150 : options.max;
 
+  var self = this;
+
   var worker = function(dataProvider, ratio) {
     var i = 0;
     while (i < ratio) {
       data = dataProvider.next();
       if (typeof data === 'undefined') break;
-        console.log(data.message);
-//      this.createEvent(data);
+        self.createEvent(data);
       i++;
     }
 
@@ -76,17 +92,40 @@ TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
   worker(dataProvider, ratio);
 }
 
+
+/**
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
 function TSPulseAPIDefaultHandler() {
-  this.totalNumberOfRequests = 0;
-  this.totalNumberOfResponces = 0;
 }
 
-TSPulseAPIDefaultHandler.prototype.handleRequest = function(result) {
-
+/**
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
+TSPulseAPIDefaultHandler.prototype.handleRequest = function(handle) {
+  console.log(handle.statistics.totalNumberOfRequests + ":" + handle.statistics.totalNumberOfResponces);
 }
 
-TSPulseAPIDefaultHandler.prototype.handleResponce = function(result) {
+/**
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
+TSPulseAPIDefaultHandler.prototype.handleResponce = function(handle, result) {
 
+  if (result.statusCode >= 400) {
+    console.log('Status: ' + result.statusCode);
+    console.log('Headers: ' + JSON.stringify(result.headers));
+    result.setEncoding('utf8');
+    result.on('data', function (body) {
+      console.log('Body: ' + body);
+    });
+  }
+}
+
+/**
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
+TSPulseAPIDefaultHandler.prototype.handleError = function(error) {
+  console.log('problem with request: ' + error.message);
 }
 
 /**
