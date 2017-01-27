@@ -71,6 +71,8 @@ TSPulseAPI.prototype.createEvent = function(data) {
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
 TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
+  if (options == undefined) options = {};
+
   var ratio = options.ratio == undefined ? 80 : options.ratio;
   var min = options.min == undefined ? 50 : options.min;
   var max = options.max == undefined ? 150 : options.max;
@@ -85,6 +87,20 @@ TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
         self.createEvent(data);
       i++;
     }
+
+    // selftune the ratio
+    var backlog = self.statistics.totalNumberOfRequests - self.statistics.totalNumberOfResponces;
+    if ( backlog > max ) {
+      ratio = Math.max(0, ratio - (backlog - max));
+    } else if ( backlog < min ) {
+      ratio = ratio + 10;
+    } else if ( ratio + 10 < (max - min) / 2) {
+      ratio = ratio + 10;
+    } else if ( ratio - 10 > (max - min) / 2) {
+      ratio = ratio - 10;
+    }
+    console.log(ratio);
+    self.ratio = ratio;
 
     if (typeof data !== 'undefined') setTimeout(worker, 1000, dataProvider, ratio);
   }
@@ -103,7 +119,21 @@ function TSPulseAPIDefaultHandler() {
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
 TSPulseAPIDefaultHandler.prototype.handleRequest = function(handle) {
-  console.log(handle.statistics.totalNumberOfRequests + ":" + handle.statistics.totalNumberOfResponces);
+  if (handle.statistics.totalNumberOfRequests % 100 == 0) {
+    var today = new Date(),
+      h = today.getHours(),
+      m = today.getMinutes(),
+      s = today.getSeconds();
+      h = h > 10 ? h : '0' + h;
+      m = m > 10 ? m : '0' + m;
+      s = s > 10 ? s : '0' + s;
+
+    console.log(h+":"+m+":"+s+" Requests: " + handle.statistics.totalNumberOfRequests +
+       " Responces: " + handle.statistics.totalNumberOfResponces +
+       " Backlog: " + (handle.statistics.totalNumberOfRequests - handle.statistics.totalNumberOfResponces) +
+       " Ratio: " + handle.ratio
+     );
+  }
 }
 
 /**
@@ -243,11 +273,9 @@ pulseAPI = new TSPulseAPI({
 });
 
 var dataProvider = new ExcelDataProvider({
-  filename: "d:\\data\\bmc\\tmp\\incident1.xlsx",
+  filename: "d:\\data\\bmc\\tmp\\incident.xlsx",
   map: map,
   startAt : 2,
 });
 
-pulseAPI.createEvents(dataProvider, {
-  ratio: 2
-});
+pulseAPI.createEvents(dataProvider);
