@@ -1,40 +1,11 @@
 var XLSX = require('xlsx');
 var https = require('https');
 
-
-function getExcelColumnNumber(name) {
-  var sum = 0;
-
-  for (var i = 0; i < name.length; i++) {
-    sum = sum * 26;
-    sum = sum + (name.charCodeAt(i) - 'A'.charCodeAt(0) + 1);
-  }
-
-  sum = sum - 1;
-
-  return sum
-}
-
-function getExcelColumnName(columnNumber) {
-  var dividend = columnNumber + 1;
-  var columnName = '';
-  var modulo;
-
-  while (dividend > 0)
-  {
-    modulo = (dividend - 1) % 26;
-    columnName = String.fromCharCode(65 + modulo) + columnName;
-    dividend = Math.trunc((dividend - modulo) / 26);
-  } 
-
-  return columnName;
-}
-
-function TSPulseAPI(properties) {
-  this.email = properties.email;
-  this.apiToken = properties.apiToken;
-  this.hostname = typeof properties.hostname !== 'undefined' ? properties.hostname : 'api.truesight.bmc.com';
-  this.port = typeof properties.port !== 'undefined' ? properties.port : 443;
+function TSPulseAPI(options) {
+  this.email = options.email;
+  this.apiToken = options.apiToken;
+  this.hostname = typeof options.hostname !== 'undefined' ? options.hostname : 'api.truesight.bmc.com';
+  this.port = typeof options.port !== 'undefined' ? options.port : 443;
 
   this.options = {
     protocol: 'https:',
@@ -45,6 +16,31 @@ function TSPulseAPI(properties) {
         'Content-Type': 'application/json',
     }
   };
+
+  this._request = function(data) {
+
+    var request = https.request(this.options, function(result) {
+      numberOfResults++;
+
+  //    if (numberOfResults % 10 == 0) console.log(new Date() + " processed " + numberOfResults + " results ...");
+
+      if (result.statusCode >= 400) {
+        console.log('Status: ' + result.statusCode);
+        console.log('Headers: ' + JSON.stringify(result.headers));
+        result.setEncoding('utf8');
+        result.on('data', function (body) {
+          console.log('Body: ' + body);
+        });
+      }
+    });
+
+    request.on('error', function(e) {
+      console.log('problem with request: ' + e.message);
+    });
+
+    request.write(JSON.stringify(data));
+    request.end();
+  }
 }
 
 TSPulseAPI.prototype.createEvent = function(data) {
@@ -55,160 +51,164 @@ TSPulseAPI.prototype.createEvent = function(data) {
 }
 
 var numberOfResults = 0;
-TSPulseAPI.prototype._request = function(data) {
 
-  var request = https.request(this.options, function(result) {
-    numberOfResults++;
+/**
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
+TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
+  var ratio = options.ratio == undefined ? 80 : options.ratio;
+  var min = options.min == undefined ? 50 : options.min;
+  var max = options.max == undefined ? 150 : options.max;
 
-//    if (numberOfResults % 10 == 0) console.log(new Date() + " processed " + numberOfResults + " results ...");
-
-    if (result.statusCode >= 400) {
-      console.log('Status: ' + result.statusCode);
-      console.log('Headers: ' + JSON.stringify(result.headers));
-      result.setEncoding('utf8');
-      result.on('data', function (body) {
-        console.log('Body: ' + body);
-      });
+  var worker = function(dataProvider, ratio) {
+    var i = 0;
+    while (i < ratio) {
+      data = dataProvider.next();
+      if (typeof data === 'undefined') break;
+        console.log(data.message);
+//      this.createEvent(data);
+      i++;
     }
-  });
 
-  request.on('error', function(e) {
-    console.log('problem with request: ' + e.message);
-  });
+    if (typeof data !== 'undefined') setTimeout(worker, 1000, dataProvider, ratio);
+  }
 
-  request.write(JSON.stringify(data));
-  request.end();
+  worker(dataProvider, ratio);
 }
 
-function insertRequests() {
-  var workbook = XLSX.readFile('/vagrant/requests.xlsx');
-  var sheet = workbook.Sheets[Object.keys(workbook.Sheets)[0]];
-  
-  var str = sheet['!ref'].match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
+function TSPulseAPIDefaultHandler() {
+  this.totalNumberOfRequests = 0;
+  this.totalNumberOfResponces = 0;
+}
 
-  fromX = Number(str[1]);
-  fromY = Number(str[2]);
-  toX = Number(str[3]);
-  toY = Number(str[4]);
-    
-  for (var i = fromY + 1; i < toY; i++) {
-    if (i % 1000 == 0) console.log(new Date() + " processed " + i + " rows ...");
-    var data = {
-      "source": {
-        "ref": "Computacenter",
-        "type": "Computacenter",
-        "name": "Computacenter"
-      },
-      "sender": {
-        "ref": "Computacenter",
-        "type": "Computacenter",
-        "name": "Computacenter"
-      },
-      "fingerprintFields": ["request_id"],
-      "message": sheet['G' + i].w,
-      "title": sheet['E' + i].w,
-      "eventClass": "Request",
-      "status": "Unknown",
-      "severity": "Unknown",
-      "createdAt": sheet['A' + i].w,
-      "properties": {
-         "app_id": "Computacenter",
-         "request_id": sheet['B' + i].w,
-         "city": sheet['C' + i].w,
-         "assignement_group": sheet['D' + i].w,
-         "short_description": sheet['E' + i].w,
-         "cmdb_ci": sheet['F' + i].w,
-         "close_notes": sheet['G' + i].w,
-         "opened_at": sheet['H' + i].w,
-         "closed_at": sheet['I' + i].w
-       },
-       "tags": ["app_id:Computacenter"]
-    };
-  
-  pulseAPI.createEvent(data);
-  
-  //  for (var j = getExcelColumnNumber(fromX); j < getExcelColumnNumber(toX); j++) {
-  //    console.log(JSON.stringify(worksheet[getExcelColumnName(j) + i].w));
-  //  }
+TSPulseAPIDefaultHandler.prototype.handleRequest = function(result) {
+
+}
+
+TSPulseAPIDefaultHandler.prototype.handleResponce = function(result) {
+
+}
+
+/**
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
+function ExcelDataProvider(options) {
+  this.filename = options.filename;
+  this.map = options.map;
+  this.startAt = typeof options.startAt === 'undefined' ? 1 : options.startAt;
+  this.endAt = typeof options.endAt === 'undefined' ? 0 : options.endAt;
+
+  this.workbook = XLSX.readFile(this.filename);
+  this.sheet = this.workbook.Sheets[Object.keys(this.workbook.Sheets)[0]];
+  this.currentRow = this.startAt;
+
+  this.mapper = function(map, sheet, row) {
+    var result = {};
+
+    // loop throw all the entries in the map
+    for(var key in map) {
+      // the content of the map entry is an array
+      if( Object.prototype.toString.call( map[key] ) === '[object Array]' ) {
+        result[key] = [];
+        for (var content in map[key]) {
+          if ( Object.prototype.toString.call( map[key][content] ) === '[object Array]' ) {
+            result[key].push(this.mapper(map[key][content], sheet, row));
+
+          } else if ( typeof map[key][content] === 'object') {
+            result[key].push(this.mapper(map[key][content], sheet, row));
+
+          } else
+            result[key].push(map[key][content]);
+        }
+
+      // the content of this map entry is an object
+      } else if (typeof map[key] === 'object') {
+        result[key] = this.mapper(map[key], sheet, row);
+
+      // the content is neither an object or an array so we will just copy it
+      } else {
+        // TODO needs to be more waterproove
+        if ( /^[A-Z][A-Z]?$/.test(map[key]) ) {
+          result[key] = sheet[map[key] + row].w;
+        } else {
+          result[key] = map[key];
+        }
+      }
+    }
+
+    return result;
   }
 }
 
+/**
+ * @author Martin Tauber <martin_tauber@bmc.com>
+ */
+ExcelDataProvider.prototype.next = function() {
 
-function insertIncidents() {
-  var workbook = XLSX.readFile('/vagrant/incident.xlsx');
-  var sheet = workbook.Sheets[Object.keys(workbook.Sheets)[0]];
-  
-  var str = sheet['!ref'].match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
-  fromX = Number(str[1]);
-  fromY = Number(str[2]);
-  toX = Number(str[3]);
-  toY = Number(str[4]);
-    
-  sendIncident(sheet, fromY + 1, toY, fromY + 1, 80, 1000);
+  // TODO needs to be more waterproove
+  if (this.sheet['A' + this.currentRow] === undefined
+    || this.sheet['A' + this.currentRow] == ''
+    || (this.endAt != 0 && this.currentRow > this.endAt)) return;
+
+  return this.mapper(this.map, this.sheet, this.currentRow++);
 }
 
-function sendIncident(sheet, fromY, toY, start, interval, timer) {
-  for (var i = start; i < Math.min(start + interval, toY); i++) {
-    if (typeof sheet['A' + i] === 'undefined') break;
-    if (i % 100 == 0) console.log(new Date() + " processed " + i + " rows. Results received " + numberOfResults + " diff " + (i - numberOfResults));
-    var data = {
-      "source": {
-        "ref": "Computacenter",
-        "type": "Computacenter",
-        "name": "Computacenter"
-      },
-      "sender": {
-        "ref": "Computacenter",
-        "type": "Computacenter",
-        "name": "Computacenter"
-      },
-      "fingerprintFields": ["incident_id"],
-      "message": sheet['N' + i].w,
-      "title": sheet['N' + i].w,
-      "eventClass": "Incident",
-      "status": sheet['D' + i].w,
-      "severity": sheet['E' + i].w,
-      "createdAt": sheet['A' + i].w,
-      "properties": {
-        "app_id": "Computacenter",
-        "incident_id": sheet['C' + i].w,
-        "u_ge_hr_industry_group": sheet['B' + i].w,
-        "state": sheet['D' + i].w,
-        "priority": sheet['E' + i].w,
-        "contact_type": sheet['F' + i].w,
-        "city": sheet['G' + i].w,
-        "country": sheet['H' + i].w,
-        "opened_at": sheet['I' + i].w,
-        "sys_created_on": sheet['J' + i].w,
-        "u_resolved_time": sheet['K' + i].w,
-        "assignment_group": sheet['L' + i].w,
-        "reassignment_count": sheet['M' + i].w,
-        "short_description": sheet['N' + i].w,
-        "close_notes": sheet['O' + i].w,
-        "open_ci": sheet['P' + i].w,
-        "cmdb_ci": sheet['Q' + i].w,
-        "category": sheet['R' + i].w,
-        "u_category": sheet['S' + i].w,
-        "subcategory": sheet['T' + i].w,
-        "u_subcategory": sheet['U' + i].w,
-        "made_sla": sheet['V' + i].w
-      },
-     "tags": ["app_id:Computacenter"]
-    };
-
-    pulseAPI.createEvent(data);
-  }
-
-  if (i < toY && typeof sheet['A' + i] !== 'undefined') {
-    setTimeout(sendIncident, timer, sheet, fromY, toY, i, interval, timer);
-  }
-}
-
+var map = {
+  source: {
+    ref: 'Computacenter',
+    type: 'Computacenter',
+    name: 'Computacenter'
+  },
+  sender: {
+    ref: 'Computacenter',
+    type: 'Computacenter',
+    name: 'Computacenter'
+  },
+  fingerprintFields: ['incident_id'],
+  message: 'N',
+  title: 'N',
+  eventClass: 'Incident',
+  status: 'D',
+  severity: 'E',
+  createdAt: 'A',
+  properties: {
+    app_id: 'Computacenter',
+    incident_id: 'C',
+    u_ge_hr_industry_group: 'B',
+    state: 'D',
+    priority: 'E',
+    contact_type: 'F',
+    city: 'G',
+    country: 'H',
+    opened_at: 'I',
+    sys_created_on: 'J',
+    u_resolved_time: 'K',
+    assignment_group: 'L',
+    reassignment_count: 'M',
+    short_description: 'N',
+    close_notes: 'O',
+    open_ci: 'P',
+    cmdb_ci: 'Q',
+    category: 'R',
+    u_category: 'S',
+    subcategory: 'T',
+    u_subcategory: 'U',
+    made_sla: 'V'
+  },
+ tags: ['app_id:Computacenter']
+};
 
 pulseAPI = new TSPulseAPI({
   email: 'martin_tauber@bmc.com',
   apiToken: '7cae610a-cf1d-4d20-87f0-61aadea7d8e5'
 });
 
-insertIncidents();
+var dataProvider = new ExcelDataProvider({
+  filename: "d:\\data\\bmc\\tmp\\incident1.xlsx",
+  map: map,
+  startAt : 2,
+});
 
+pulseAPI.createEvents(dataProvider, {
+  ratio: 2
+});

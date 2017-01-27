@@ -10,7 +10,7 @@
     { "type" : "git",
       "url" : "https://github.com/tsguru/excel2pulse"
     },
-  "author": "Martin Tauber" <martin.tauber@truesight.guru> (http://www.truesight.guru),
+  "author": "Martin Tauber" <martin_tauber@bmc.com> (http://www.bmc.com),
   "license": "ISC",
   "dependencies": {
     "xlsx": "^0.8.1"
