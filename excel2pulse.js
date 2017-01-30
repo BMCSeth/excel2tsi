@@ -1,5 +1,7 @@
 var XLSX = require('xlsx');
 var https = require('https');
+var log4js = require('log4js');
+var logger = log4js.getLogger();
 
 /**
  * This class implements the interface to TrueSight Pulse. You need to
@@ -26,8 +28,14 @@ function TSPulseAPI(options) {
   this.handler = options.handler != undefined ? options.handler : new TSPulseAPIDefaultHandler();
 
   this.statistics = {
-    totalNumberOfRequests: 0,
-    totalNumberOfResponces: 0
+    numberOfRequests: 0,
+    numberOfResponces: 0,
+    numberOfErrors: 0,
+    numberOfFatalErrors: 0
+//    firstRequestAt
+//    lastRequestAt
+//    firstResponceAt
+//    lastResponceAt
   }
 
   var self=this;
@@ -43,19 +51,34 @@ function TSPulseAPI(options) {
   };
 
   this._request = function(data) {
+    if (self.statistics.firstRequestAt == undefined)
+      self.statistics.firstRequestAt = new Date();
+
+    self.statistics.lastRequestAt = new Date();
+
     var request = https.request(self.options, function(result) {
-      self.statistics.totalNumberOfResponces++;
+      self.statistics.numberOfResponces++;
+      if (self.statistics.firstResponceAt == undefined)
+        self.statistics.firstResponceAt = new Date();
+
+      self.statistics.lastResponceAt = new Date();
+
+      if (result.statusCode >= 400) {
+        self.statistics.numberOfErrors++;
+      }
+
       self.handler.handleResponce(self, result);
     });
 
     request.on('error', function(e) {
+      self.statistics.numberOfFatalErrors++;
       self.handler.handleError(e);
     });
 
     request.write(JSON.stringify(data));
     request.end();
 
-    self.statistics.totalNumberOfRequests++;
+    self.statistics.numberOfRequests++;
     self.handler.handleRequest(self);
   }
 }
@@ -71,6 +94,7 @@ TSPulseAPI.prototype.createEvent = function(data) {
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
 TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
+  logger.info("Creating events ...");
   if (options == undefined) options = {};
 
   var ratio = options.ratio == undefined ? 80 : options.ratio;
@@ -89,17 +113,15 @@ TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
     }
 
     // selftune the ratio
-    var backlog = self.statistics.totalNumberOfRequests - self.statistics.totalNumberOfResponces;
+    var backlog = self.statistics.numberOfRequests - self.statistics.numberOfResponces;
     if ( backlog > max ) {
       ratio = Math.max(0, ratio - (backlog - max));
-    } else if ( backlog < min ) {
+    } else if ( backlog + 10 < min + (max - min) / 2) {
       ratio = ratio + 10;
-    } else if ( ratio + 10 < (max - min) / 2) {
-      ratio = ratio + 10;
-    } else if ( ratio - 10 > (max - min) / 2) {
+    } else if ( backlog - 10 > min + (max - min) / 2) {
       ratio = ratio - 10;
     }
-    console.log(ratio);
+    // logger.debug(min + ":" + max + " " + backlog + " " + ratio);
     self.ratio = ratio;
 
     if (typeof data !== 'undefined') setTimeout(worker, 1000, dataProvider, ratio);
@@ -119,18 +141,10 @@ function TSPulseAPIDefaultHandler() {
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
 TSPulseAPIDefaultHandler.prototype.handleRequest = function(handle) {
-  if (handle.statistics.totalNumberOfRequests % 100 == 0) {
-    var today = new Date(),
-      h = today.getHours(),
-      m = today.getMinutes(),
-      s = today.getSeconds();
-      h = h > 10 ? h : '0' + h;
-      m = m > 10 ? m : '0' + m;
-      s = s > 10 ? s : '0' + s;
-
-    console.log(h+":"+m+":"+s+" Requests: " + handle.statistics.totalNumberOfRequests +
-       " Responces: " + handle.statistics.totalNumberOfResponces +
-       " Backlog: " + (handle.statistics.totalNumberOfRequests - handle.statistics.totalNumberOfResponces) +
+  if (handle.statistics.numberOfRequests % 1000 == 0) {
+    logger.info("Requests: " + handle.statistics.numberOfRequests +
+       " Responces: " + handle.statistics.numberOfResponces +
+       " Backlog: " + (handle.statistics.numberOfRequests - handle.statistics.numberOfResponces) +
        " Ratio: " + handle.ratio
      );
   }
@@ -142,11 +156,11 @@ TSPulseAPIDefaultHandler.prototype.handleRequest = function(handle) {
 TSPulseAPIDefaultHandler.prototype.handleResponce = function(handle, result) {
 
   if (result.statusCode >= 400) {
-    console.log('Status: ' + result.statusCode);
-    console.log('Headers: ' + JSON.stringify(result.headers));
+    logger.error('Status: ' + result.statusCode);
+    logger.error('Headers: ' + JSON.stringify(result.headers));
     result.setEncoding('utf8');
     result.on('data', function (body) {
-      console.log('Body: ' + body);
+      logger.error('Body: ' + body);
     });
   }
 }
@@ -155,7 +169,7 @@ TSPulseAPIDefaultHandler.prototype.handleResponce = function(handle, result) {
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
 TSPulseAPIDefaultHandler.prototype.handleError = function(error) {
-  console.log('problem with request: ' + error.message);
+  logger.error('problem with request: ' + error.message);
 }
 
 /**
@@ -167,6 +181,7 @@ function ExcelDataProvider(options) {
   this.startAt = typeof options.startAt === 'undefined' ? 1 : options.startAt;
   this.endAt = typeof options.endAt === 'undefined' ? 0 : options.endAt;
 
+  logger.info("Reading Excel file: " + this.filename + " ...");
   this.workbook = XLSX.readFile(this.filename);
   this.sheet = this.workbook.Sheets[Object.keys(this.workbook.Sheets)[0]];
   this.currentRow = this.startAt;
@@ -267,13 +282,24 @@ var map = {
  tags: ['app_id:Computacenter']
 };
 
+
 pulseAPI = new TSPulseAPI({
   email: 'martin_tauber@bmc.com',
   apiToken: '7cae610a-cf1d-4d20-87f0-61aadea7d8e5'
 });
 
+process.on('exit', function(){
+  logger.info("First request at: " + pulseAPI.statistics.firstRequestAt);
+  logger.info("Last responce at: " + pulseAPI.statistics.lastResponceAt);
+  logger.info("Number of Requests: " + pulseAPI.statistics.numberOfRequests);
+  logger.info("Number of Responces: " + pulseAPI.statistics.numberOfResponces);
+  logger.info("Number of Errors: " + pulseAPI.statistics.numberOfErrors);
+  logger.info("Number of Fatal Errors: " + pulseAPI.statistics.numberOfFatalErrors);
+  logger.info("Avg Responces / sec: " + 1000 / (pulseAPI.statistics.lastResponceAt - pulseAPI.statistics.firstRequestAt) * pulseAPI.statistics.numberOfResponces);
+})
+
 var dataProvider = new ExcelDataProvider({
-  filename: "d:\\data\\bmc\\tmp\\incident.xlsx",
+  filename: "d:\\mtauber\\data\\bmc\\vmtemplates\\incident.xlsx",
   map: map,
   startAt : 2,
 });
