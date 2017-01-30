@@ -54,6 +54,10 @@ function TsiAPI(options) {
   var self=this;
 
   /**
+   * Internal method so send a request to tsi.
+   * @param {opject} options
+   * @param {number} retry number of retries in case of an error
+   * @param {object} data payload to send to the server
    * @author Martin Tauber <martin_tauber@bmc.com>
    */
   this._request = function(options, retry, data) {

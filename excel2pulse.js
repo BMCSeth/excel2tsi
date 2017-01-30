@@ -1,9 +1,11 @@
+const commandLineArgs = require('command-line-args');
+const getUsage = require('command-line-usage')
+
 var XLSX = require('xlsx');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 
 var tsiapi = require('./tsiapi');
-
 
 /**
  * @author Martin Tauber <martin_tauber@bmc.com>
@@ -70,7 +72,87 @@ ExcelDataProvider.prototype.next = function() {
   return this.mapper(this.map, this.sheet, this.currentRow++);
 }
 
-console.log(process.argv);
+const optionDefinitions = [
+  { name: 'help', alias: 'h', type: Boolean, descritpion:
+    "Print this usage guide."},
+  { name: 'file', alias: 'f', type: String, description:
+    "Use the excel file specified as an input."},
+  { name: 'email', alias: 'e', type: String, description:
+    "The email address used to connect to the TrueSight Intelligence server."},
+  { name: 'token', alias: 't', type: String, description:
+    "The api token used to connect to the TrueSight Intelligence server."},
+  { name: 'map', alias: 'm', type: String, description:
+    "The map file to be used to map excel columns to TrueSight Intelligence attributes."},
+  { name: 'start', type: Number, defaultValue: 2, description:
+    "start processing the excel file at the row specified. If no value is specified the processing starts in the second row. The rows are counted starting from 1."},
+  { name: 'end', type: Number, description:
+    "end the processing of the excel file at the row specifed. If no value is specified all rows are processed. The rows are counted starting form 1."},
+  { name: 'fake', type: Boolean, description:
+    "Do not send the data to the TSI server. Only process the first row and display the content."}
+];
+
+const sections = [
+  {
+    header: 'Excel to TSI',
+    content: 'Reads and excel file and sends the data to TrueSight Intelligence.'
+  },
+  {
+    header: 'Synopsis',
+    content: [
+      'excel2tsi --help',
+      'excel2tsi (--file|-f) <filename> (--email|-e) <email> (--token|-t) <apiToken> ' +
+      '[(--map|-m) <filename>] [--start <startAtLine>] [--end <endAtLine>] [--fake]'
+    ]
+  },
+  {
+    header: 'Options',
+    optionList: optionDefinitions
+  },
+  {
+    header: 'Examples',
+    content: [
+      'excel2tsi --file myevents.xlsx --email me@company.com --token theApiToken ' +
+      '--map mymap.json'
+    ]
+  },
+  {
+    header: 'Author',
+    content: 'Martin Tauber <martin_tauber@bmc.com>'
+  }
+]
+
+const usage = getUsage(sections)
+
+var options;
+try {
+  options  = commandLineArgs(optionDefinitions);
+} catch (error) {
+  console.log(error.name);
+  console.log("");
+  console.log(usage);
+  process.exit(0);
+}
+
+if (options.help) {
+  console.log(usage);
+  process.exit(0);
+}
+
+if (options.file == undefined) {
+  console.log("Please specify an excel file containing the data to be send to the TrueSight server.");
+  console.log(usage);
+  process.exit(0);
+}
+
+if (options.email == undefined) {
+  console.log("please specify an email address used to connect to the TrueSight server.");
+  process.exit(0);
+}
+
+if (options.token == undefined) {
+  console.log("Please specify a api token used to connect to the TrueSight server.");
+  process.exit(0);
+}
 
 var map = {
   source: {
@@ -134,9 +216,9 @@ process.on('exit', function(){
 })
 
 var dataProvider = new ExcelDataProvider({
-  filename: "d:\\mtauber\\data\\bmc\\vmtemplates\\incident1.xlsx",
+  filename: options.file,
   map: map,
-  startAt : 2,
+  startAt : options.start,
 });
 
 tsi.createEvents(dataProvider);
