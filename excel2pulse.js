@@ -115,9 +115,7 @@ var map = {
  tags: ['app_id:Computacenter']
 };
 
-console.log(tsiapi);
-
-pulseAPI = new tsiapi.tsi({
+tsi = new tsiapi.tsi({
   email: 'martin_tauber@bmc.com',
   apiToken: '7cae610a-cf1d-4d20-87f0-61aadea7d8e5',
   logger: logger
@@ -139,4 +137,4 @@ var dataProvider = new ExcelDataProvider({
   startAt : 2,
 });
 
-pulseAPI.createEvents(dataProvider);
+tsi.createEvents(dataProvider);

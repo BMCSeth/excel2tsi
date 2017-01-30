@@ -11,23 +11,24 @@ var https = require('https');
  *   hostname - the hostname of the truesight server
  *   port - the portnumber of the truesight server
  *   handler - the handler to be used to handle requests, responces and errors
+ *   maxRetries - maximum number of retries in case a request returns an error
  *
  * @class
  * @constructor
  * @param {object} options
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
-function TSPulseAPI(options) {
+function TsiAPI(options) {
   this.email = options.email;
   this.apiToken = options.apiToken;
   this.hostname = options.hostname != undefined ? options.hostname : 'api.truesight.bmc.com';
   this.port = options.port != undefined ? options.port : 443;
-  this.handler = options.handler != undefined ? options.handler : new TSPulseAPIDefaultHandler();
+  this.handler = options.handler != undefined ? options.handler : new TsiAPIDefaultHandler();
 
   this.maxRetries = options.maxRetries != undefined ? options.maxRetries : 5;
 
   if (options.logger == undefined) {
-    this.logger = new TSINullLogger();
+    this.logger = new TsiAPINullLogger();
   } else {
     this.logger = options.logger;
   }
@@ -62,14 +63,17 @@ function TSPulseAPI(options) {
     }
   };
 
-  this._request = function(data) {
+  /**
+   * @author Martin Tauber <martin_tauber@bmc.com>
+   */
+  this._request = function(options, data) {
     if (self.statistics.firstRequestAt == undefined)
       self.statistics.firstRequestAt = new Date();
 
     self.statistics.lastRequestAt = new Date();
 
     var retries = 0;
-    var request = https.request(self.options, function(result) {
+    var request = https.request(options, function(result) {
       self.statistics.numberOfResponces++;
       if (self.statistics.firstResponceAt == undefined)
         self.statistics.firstResponceAt = new Date();
@@ -86,8 +90,8 @@ function TSPulseAPI(options) {
     request.on('error', function(e) {
       retries++;
       if (retries < self.maxRetries) {
-        this.logger.info("Resending request. (retry=" + retries + ")" );
-        self._request(data);
+        self.logger.info("Resending request. (retry=" + retries + ")" );
+        self._request(options, data);
       } else {
         self.statistics.numberOfFatalErrors++;
         self.handler.handleError(self, e);
@@ -102,17 +106,19 @@ function TSPulseAPI(options) {
   }
 }
 
-TSPulseAPI.prototype.createEvent = function(data) {
-  this.options.path = '/v1/events';
-  this.options.method = 'POST';
+TsiAPI.prototype.createEvent = function(event) {
+  var options = {
+    path: '/v1/events',
+    method: 'POST'
+  }
 
-  this._request(data);
+  this._request(options, event);
 }
 
 /**
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
-TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
+TsiAPI.prototype.createEvents = function(dataProvider, options) {
   this.logger.info("Creating events ...");
   if (options == undefined) options = {};
 
@@ -157,13 +163,13 @@ TSPulseAPI.prototype.createEvents = function(dataProvider, options) {
 /**
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
-function TSPulseAPIDefaultHandler() {
+function TsiAPIDefaultHandler() {
 }
 
 /**
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
-TSPulseAPIDefaultHandler.prototype.handleRequest = function(handle) {
+TsiAPIDefaultHandler.prototype.handleRequest = function(handle) {
   if (handle.statistics.numberOfRequests % 1000 == 0) {
     handle.logger.info("Requests: " + handle.statistics.numberOfRequests +
        " Responces: " + handle.statistics.numberOfResponces +
@@ -176,7 +182,7 @@ TSPulseAPIDefaultHandler.prototype.handleRequest = function(handle) {
 /**
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
-TSPulseAPIDefaultHandler.prototype.handleResponce = function(handle, result) {
+TsiAPIDefaultHandler.prototype.handleResponce = function(handle, result) {
 
   if (result.statusCode >= 400) {
     handle.logger.error('Status: ' + result.statusCode);
@@ -191,14 +197,14 @@ TSPulseAPIDefaultHandler.prototype.handleResponce = function(handle, result) {
 /**
  * @author Martin Tauber <martin_tauber@bmc.com>
  */
-TSPulseAPIDefaultHandler.prototype.handleError = function(handle, error) {
+TsiAPIDefaultHandler.prototype.handleError = function(handle, error) {
   handle.logger.error('problem with request: ' + error.message);
 }
 
-function TSINullLogger() {
+function TsiAPINullLogger() {
   this.info = function() {};
   this.error = function() {};
   this.debug = function() {};
 }
 
-exports.tsi = TSPulseAPI;
+exports.tsi = TsiAPI;
