@@ -70,6 +70,8 @@ ExcelDataProvider.prototype.next = function() {
   return this.mapper(this.map, this.sheet, this.currentRow++);
 }
 
+console.log(process.argv);
+
 var map = {
   source: {
     ref: 'Computacenter',
@@ -122,17 +124,17 @@ tsi = new tsiapi.tsi({
 });
 
 process.on('exit', function(){
-  logger.info("First request at: " + pulseAPI.statistics.firstRequestAt);
-  logger.info("Last responce at: " + pulseAPI.statistics.lastResponceAt);
-  logger.info("Number of Requests: " + pulseAPI.statistics.numberOfRequests);
-  logger.info("Number of Responces: " + pulseAPI.statistics.numberOfResponces);
-  logger.info("Number of Errors: " + pulseAPI.statistics.numberOfErrors);
-  logger.info("Number of Fatal Errors: " + pulseAPI.statistics.numberOfFatalErrors);
-  logger.info("Avg Responces / sec: " + 1000 / (pulseAPI.statistics.lastResponceAt - pulseAPI.statistics.firstRequestAt) * pulseAPI.statistics.numberOfResponces);
+  logger.info("First request at: " + tsi.statistics.firstRequestAt);
+  logger.info("Last responce at: " + tsi.statistics.lastResponceAt);
+  logger.info("Number of Requests: " + tsi.statistics.numberOfRequests);
+  logger.info("Number of Responces: " + tsi.statistics.numberOfResponces);
+  logger.info("Number of Errors: " + tsi.statistics.numberOfErrors);
+  logger.info("Number of Fatal Errors: " + tsi.statistics.numberOfFatalErrors);
+  logger.info("Avg Responces / sec: " + 1000 / (tsi.statistics.lastResponceAt - tsi.statistics.firstRequestAt) * tsi.statistics.numberOfResponces);
 })
 
 var dataProvider = new ExcelDataProvider({
-  filename: "d:\\mtauber\\data\\bmc\\vmtemplates\\incident.xlsx",
+  filename: "d:\\mtauber\\data\\bmc\\vmtemplates\\incident1.xlsx",
   map: map,
   startAt : 2,
 });

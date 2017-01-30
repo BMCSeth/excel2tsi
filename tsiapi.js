@@ -53,26 +53,15 @@ function TsiAPI(options) {
 
   var self=this;
 
-  this.options = {
-    protocol: 'https:',
-    hostname: this.hostname,
-    port: this.port,
-    auth: this.email + ':' + this.apiToken,
-    headers: {
-        'Content-Type': 'application/json',
-    }
-  };
-
   /**
    * @author Martin Tauber <martin_tauber@bmc.com>
    */
-  this._request = function(options, data) {
+  this._request = function(options, retry, data) {
     if (self.statistics.firstRequestAt == undefined)
       self.statistics.firstRequestAt = new Date();
 
     self.statistics.lastRequestAt = new Date();
 
-    var retries = 0;
     var request = https.request(options, function(result) {
       self.statistics.numberOfResponces++;
       if (self.statistics.firstResponceAt == undefined)
@@ -88,10 +77,10 @@ function TsiAPI(options) {
     });
 
     request.on('error', function(e) {
-      retries++;
-      if (retries < self.maxRetries) {
-        self.logger.info("Resending request. (retry=" + retries + ")" );
-        self._request(options, data);
+      retry++;
+      if (retry <= self.maxRetries) {
+        self.logger.info("Resending request. (retry=" + retry + ")" );
+        self._request(options, retry, data);
       } else {
         self.statistics.numberOfFatalErrors++;
         self.handler.handleError(self, e);
@@ -108,11 +97,18 @@ function TsiAPI(options) {
 
 TsiAPI.prototype.createEvent = function(event) {
   var options = {
+    protocol: 'https:',
+    hostname: this.hostname,
+    port: this.port,
+    auth: this.email + ':' + this.apiToken,
+    headers: {
+        'Content-Type': 'application/json',
+    },
     path: '/v1/events',
     method: 'POST'
   }
 
-  this._request(options, event);
+  this._request(options, 0, event);
 }
 
 /**
