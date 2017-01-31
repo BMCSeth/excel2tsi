@@ -21,9 +21,9 @@ const optionDefinitions = [
     "The api token used to connect to the TrueSight Intelligence server."},
   { name: 'map', alias: 'm', type: String, description:
     "The map file to be used to map excel columns to TrueSight Intelligence " +
-    "attributes. A sample map file can be found in the examples directory." +
+    "attributes. A sample map file can be found in the examples directory. " +
     "Basically you specify a json structure with keys and values. The keys " +
-    "are maped to the TrueSight Intelligence attributes. The values specified "+
+    "are mapped to the TrueSight Intelligence attributes. The values specified "+
     "can either be columnnames like 'A' or they are constant values like " +
     "'myApplication'. Be aware that the tool assumes that you are refering " +
     "to an excel column if the value consists of on or two capital letters."},
