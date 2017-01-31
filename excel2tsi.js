@@ -77,21 +77,24 @@ if (options.help) {
 if (options.file == undefined) {
   console.log("Please specify an excel file containing the data to be send to the TrueSight server.");
   console.log(usage);
-  process.exit(0);
+  process.exit(1);
 }
 
 if (options.email == undefined) {
   console.log("Please specify an email address used to connect to the TrueSight server.");
-  process.exit(0);
+  console.log(usage);
+  process.exit(1);
 }
 
 if (options.token == undefined) {
   console.log("Please specify a api token used to connect to the TrueSight server.");
-  process.exit(0);
+  console.log(usage);
+  process.exit(1);
 }
 
 if (options.token == undefined) {
   console.log("Please specify a map file.");
+  console.log(usage);
   process.exit(1)
 }
 
