@@ -1,7 +1,7 @@
 # excel2tsi.js
 
-**excel2tsi** loads an excel file maps it to TrueSight Intelligence attributes
-and sends it to TrueSight Intelligence. Currently only events are supported.
+**excel2tsi** loads the content of an excel file maps it to TrueSight
+Intelligence event attributes and sends it to TrueSight Intelligence.
 
 ## Installation
 
@@ -31,14 +31,14 @@ example for a map file.
 
     {
       "source": {
-      "ref": "Computacenter",
-      "type": "Computacenter",
-      "name": "Computacenter"
+      "ref": "CoolCompany",
+      "type": "CoolCompany",
+      "name": "CoolCompany"
       },
       "sender": {
-        "ref": "Computacenter",
-        "type": "Computacenter",
-        "name": "Computacenter"
+        "ref": "CoolCompany",
+        "type": "CoolCompany",
+        "name": "CoolCompany"
       },
       "fingerprintFields": ["incident_id"],
       "message": "N",
@@ -48,8 +48,22 @@ example for a map file.
       "severity": "E",
       "createdAt": "A",
       "properties": {
-        "app_id": "Computacenter",
+        "app_id": "CoolCompany",
         "incident_id": "C",
       },
-      "tags": ["app_id:Computacenter"]
+      "tags": ["app_id:CoolCompany"]
     }
+
+In this example we map the message and the title to column 'N' of our excel
+sheet. The status is mapped to column 'D' etc. We are also using contants like
+"CoolCompany" which will be send to TrueSight Intelligence without any
+modification.
+
+## Performance   
+
+**excel2tsi** is designed to load as much data into TrueSight Intelligence as
+possible. Therefor it processes the data asychronously. Data is send to the
+TrueSight server without halting to wait for the response. **excel2tsi** will
+selftune itself to ensure that the number of outstanding requests will not get
+to high. By default it tries to keep the number of outstanding requests in
+a range between 50 and 150 requests.  
