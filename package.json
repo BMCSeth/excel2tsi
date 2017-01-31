@@ -1,14 +1,17 @@
 {
-  "name": "excel2pulse",
+  "name": "excel2tsi",
   "version": "0.0.1",
   "description": "Loads data from excel files into TrueSight pulse",
-  "main": "excel2pulse.js",
+  "main": "excel2tsi.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tsguru/excel2pulse"
+    "url": "https://github.com/tsguru/excel2tsi"
+  },
+  "bin": {
+    "excel2tsi": "excel2tsi.js"
   },
   "author": "Martin Tauber <martin_tauber@bmc.com> (http://www.bmc.com)",
   "license": "ISC",
