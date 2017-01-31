@@ -5,8 +5,8 @@ var log4js = require('log4js');
 var fs = require('fs');
 var logger = log4js.getLogger();
 
-var TsiAPI = require('./tsiapi').TsiAPI;
-var ExcelDataProvider = require('./ExcelDataProvider').provider;
+var TsiAPI = require('./lib/tsiapi').TsiAPI;
+var ExcelDataProvider = require('./lib/ExcelDataProvider').provider;
 
 const optionDefinitions = [
   { name: 'help', alias: 'h', type: Boolean, descritpion:
