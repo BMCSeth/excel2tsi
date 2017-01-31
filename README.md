@@ -18,7 +18,7 @@ After you have installed **excel2tsi** successfully you should try the command
 
     excel2tsi --help
 
-This will print a usage for the **excel2tsi**
+This will print a usage for the **excel2tsi** utility.
 
 ## Mapping
 
