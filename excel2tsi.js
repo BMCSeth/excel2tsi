@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const commandLineArgs = require('command-line-args');
 const getUsage = require('command-line-usage')
 
@@ -18,13 +20,23 @@ const optionDefinitions = [
   { name: 'token', alias: 't', type: String, description:
     "The api token used to connect to the TrueSight Intelligence server."},
   { name: 'map', alias: 'm', type: String, description:
-    "The map file to be used to map excel columns to TrueSight Intelligence attributes."},
+    "The map file to be used to map excel columns to TrueSight Intelligence " +
+    "attributes. A sample map file can be found in the examples directory." +
+    "Basically you specify a json structure with keys and values. The keys " +
+    "are maped to the TrueSight Intelligence attributes. The values specified "+
+    "can either be columnnames like 'A' or they are constant values like " +
+    "'myApplication'. Be aware that the tool assumes that you are refering " +
+    "to an excel column if the value consists of on or two capital letters."},
   { name: 'start', type: Number, defaultValue: 2, description:
-    "start processing the excel file at the row specified. If no value is specified the processing starts in the second row. The rows are counted starting from 1."},
+    "start processing the excel file at the row specified. If no value is " +
+    "specified the processing starts in the second row. The rows are counted "+
+    "starting from 1."},
   { name: 'end', type: Number, description:
-    "end the processing of the excel file at the row specifed. If no value is specified all rows are processed. The rows are counted starting form 1."},
+    "end the processing of the excel file at the row specifed. If no value is " +
+    "specified all rows are processed. The rows are counted starting form 1."},
   { name: 'fake', type: Boolean, description:
-    "Do not send the data to the TSI server. Only process the first row and display the content."}
+    "Do not send the data to the TSI server. Only process the first row and "+
+    "display the content."}
 ];
 
 const sections = [
