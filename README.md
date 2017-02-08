@@ -9,6 +9,9 @@ Intelligence event attributes and sends it to TrueSight Intelligence.
 order to run **excel2tsi**. Visit the nodejs website http://www.nodejs.org to
 find out how to install nodejs on your plattform.
 
+Currently **excel2tsi** is stored on github so you will also need to install
+git to get the sources
+
 After installing nodejs **excel2tsi** can be installed using the following
 command:
 
