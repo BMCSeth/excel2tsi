@@ -12,7 +12,7 @@ find out how to install nodejs on your plattform.
 Currently **excel2tsi** is stored on github so you will also need to install
 git to get the sources
 
-After installing nodejs **excel2tsi** can be installed using the following
+After installing **nodejs** and **git** **excel2tsi** can be installed using the following
 command:
 
     npm install -g tsguru/excel2tsi
