@@ -151,6 +151,7 @@ try {
     filename: options.file,
     map: map,
     startAt : options.start,
+    endAt: options.end,
     sheet: options.sheet,
     logger: logger
   });
