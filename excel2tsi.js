@@ -35,9 +35,12 @@ const optionDefinitions = [
   { name: 'end', type: Number, description:
     "end the processing of the excel file at the row specifed. If no value is " +
     "specified all rows are processed. The rows are counted starting form 1."},
+  { name: 'sheet', type: String, description:
+    "name of the excel sheet you want to load the data from. If no sheet is " +
+    "specified the first sheet in the workbook will be used."},
   { name: 'fake', type: Boolean, description:
-    "Do not send the data to the TSI server. Only process the first row and "+
-    "display the content."}
+    "Do not send the data to the TSI server. Process the data and display the json "+
+    "that would be sent to the TSI server."}
 ];
 
 const sections = [
@@ -50,7 +53,8 @@ const sections = [
     content: [
       'excel2tsi --help',
       'excel2tsi (--file|-f) <filename> (--email|-e) <email> (--token|-t) <apiToken> ' +
-      '[(--map|-m) <filename>] [--start <startAtLine>] [--end <endAtLine>] [--fake]'
+      '[(--map|-m) <filename>] [--start <startAtLine>] [--end <endAtLine>] ' +
+      '[--sheet <sheetname>][--fake]'
     ]
   },
   {
@@ -141,13 +145,21 @@ process.on('exit', function(){
   logger.info("Avg Responces / sec: " + 1000 / (tsi.statistics.lastResponceAt - tsi.statistics.firstRequestAt) * tsi.statistics.numberOfResponces);
 })
 
-// create the excel data provider used to collect the data
-var dataProvider = new ExcelDataProvider ({
-  filename: options.file,
-  map: map,
-  startAt : options.start,
-  logger: logger
-});
+try {
+  // create the excel data provider used to collect the data
+  var dataProvider = new ExcelDataProvider ({
+    filename: options.file,
+    map: map,
+    startAt : options.start,
+    sheet: options.sheet,
+    logger: logger
+  });
 
-// create the events using the specified dataprovider
-tsi.createEvents(dataProvider);
+
+  // create the events using the specified dataprovider
+  tsi.createEvents(dataProvider, {
+    fake:options.fake}
+  );
+} catch (error) {
+  logger.error(error);
+}
