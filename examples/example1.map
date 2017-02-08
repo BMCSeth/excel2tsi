@@ -1,44 +1,15 @@
 {
   "source": {
-    "ref": "Computacenter",
-    "type": "Computacenter",
-    "name": "Computacenter"
+  "ref": "CoolCompany",
+  "type": "CoolCompany",
+  "name": "CoolCompany"
   },
   "sender": {
-    "ref": "Computacenter",
-    "type": "Computacenter",
-    "name": "Computacenter"
+    "ref": "CoolCompany",
+    "type": "CoolCompany",
+    "name": "CoolCompany"
   },
-  "fingerprintFields": ["incident_id"],
-  "message": "N",
-  "title": "N",
-  "eventClass": "Incident",
-  "status": "D",
-  "severity": "E",
+  "fingerprintFields": ["title"],
   "createdAt": "A",
-  "properties": {
-    "app_id": "Computacenter",
-    "incident_id": "C",
-    "u_ge_hr_industry_group": "B",
-    "state": "D",
-    "priority": "E",
-    "contact_type": "F",
-    "city": "G",
-    "country": "H",
-    "opened_at": "I",
-    "sys_created_on": "J",
-    "u_resolved_time": "K",
-    "assignment_group": "L",
-    "reassignment_count": "M",
-    "short_description": "N",
-    "close_notes": "O",
-    "open_ci": "P",
-    "cmdb_ci": "Q",
-    "category": "R",
-    "u_category": "S",
-    "subcategory": "T",
-    "u_subcategory": "U",
-    "made_sla": "V"
-  },
- "tags": ["app_id:Computacenter"]
+  "title": "B"
 }

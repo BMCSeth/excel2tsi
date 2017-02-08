@@ -21,12 +21,13 @@ const optionDefinitions = [
     "The api token used to connect to the TrueSight Intelligence server."},
   { name: 'map', alias: 'm', type: String, description:
     "The map file to be used to map excel columns to TrueSight Intelligence " +
-    "attributes. A sample map file can be found in the examples directory. " +
-    "Basically you specify a json structure with keys and values. The keys " +
-    "are mapped to the TrueSight Intelligence attributes. The values specified "+
-    "can either be columnnames like 'A' or they are constant values like " +
-    "'myApplication'. Be aware that the tool assumes that you are refering " +
-    "to an excel column if the value consists of on or two capital letters."},
+    "attributes. Basically you specify a json structure with keys and values. " +
+    "The keys are mapped to the TrueSight Intelligence attributes. The " +
+    "values specified can either be columnnames like 'A' or they are constant " +
+    "values like 'myApplication'. Be aware that the tool assumes that you " +
+    "are refering to an excel column if the value consists of on or two " +
+    "capital letters. You can find examples in the example diretory of the "+
+    "source code stored at github (https://github.com/tsguru/excel2tsi)"},
   { name: 'start', type: Number, defaultValue: 2, description:
     "start processing the excel file at the row specified. If no value is " +
     "specified the processing starts in the second row. The rows are counted "+
