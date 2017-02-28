@@ -88,7 +88,7 @@ try {
 }
 
 if (options.help) {
-  console.log(usage);
+  //console.log(usage);
 
     var db = new OdbcDataProvider({
 
