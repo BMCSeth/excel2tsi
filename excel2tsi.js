@@ -8,13 +8,15 @@ var fs = require('fs');
 var logger = log4js.getLogger();
 
 var TsiAPI = require('./lib/tsiapi').TsiAPI;
-var ExcelDataProvider = require('./lib/ExcelDataProvider').provider;
 
 const optionDefinitions = [
   { name: 'help', alias: 'h', type: Boolean, descritpion:
     "Print this usage guide."},
   { name: 'file', alias: 'f', type: String, description:
     "Use the excel file specified as an input."},
+  { name: 'provider', alias: 'p', defaultValue: 'excel', type: String, description:
+    "Data provider to be used. This value can either be 'excel' or 'csv'. " +
+    "The default value is 'excel"},
   { name: 'email', alias: 'e', type: String, description:
     "The email address used to connect to the TrueSight Intelligence server."},
   { name: 'token', alias: 't', type: String, description:
@@ -146,16 +148,31 @@ process.on('exit', function(){
 })
 
 try {
-  // create the excel data provider used to collect the data
-  var dataProvider = new ExcelDataProvider ({
-    filename: options.file,
-    map: map,
-    startAt : options.start,
-    endAt: options.end,
-    sheet: options.sheet,
-    logger: logger
-  });
+  var dataProvider;
 
+  if (options.provider == "excel") {
+    // create the excel data provider used to collect the data
+    var ExcelDataProvider = require('./lib/ExcelDataProvider').provider;
+    dataProvider = new ExcelDataProvider ({
+      filename: options.file,
+      map: map,
+      startAt : options.start,
+      endAt: options.end,
+      sheet: options.sheet,
+      logger: logger
+    });
+  } else if (options.provider == 'csv') {
+    var CsvdataProvider = require('./lib/CsvDataProvider').provider;
+    dataProvider = new CsvDataProvider({
+      filename: options.file,
+      map: map,
+      startAt: options.start,
+      endAt: options.end,
+      logger: logger
+    });
+  } else {
+    throw("The data provider spicified '"+options.provider+"' is not valid.");
+  }
 
   // create the events using the specified dataprovider
   tsi.createEvents(dataProvider, {
