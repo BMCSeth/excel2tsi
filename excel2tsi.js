@@ -9,6 +9,7 @@ var logger = log4js.getLogger();
 
 var TsiAPI = require('./lib/tsiapi').TsiAPI;
 var ExcelDataProvider = require('./lib/ExcelDataProvider').provider;
+var OdbcDataProvider = require('./lib/OdbcDataProvider').provider;
 
 const optionDefinitions = [
   { name: 'help', alias: 'h', type: Boolean, descritpion:
@@ -88,6 +89,13 @@ try {
 
 if (options.help) {
   console.log(usage);
+
+    var db = new OdbcDataProvider({
+
+  });
+
+
+
   process.exit(0);
 }
 
@@ -155,7 +163,6 @@ try {
     sheet: options.sheet,
     logger: logger
   });
-
 
   // create the events using the specified dataprovider
   tsi.createEvents(dataProvider, {
