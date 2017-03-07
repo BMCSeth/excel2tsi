@@ -4,8 +4,7 @@ const commandLineArgs = require('command-line-args');
 const getUsage = require('command-line-usage')
 
 var log4js = require('log4js');
-var fs = require('fs');
-var logger = log4js.getLogger();
+var logger = log4js.getLogger("TsiLink");
 
 var TsiAPI = require('./lib/tsiapi').TsiAPI;
 
@@ -37,6 +36,9 @@ const optionDefinitions = [
   { name: 'end', type: Number, description:
     "end the processing of the excel file at the row specifed. If no value is " +
     "specified all rows are processed. The rows are counted starting form 1."},
+  { name: 'delimiter', alias: 'd', defaultValue: ',', type: String, description:
+    "The delimiter used to split attributes in a csv file. If no delimiter is " +
+    "specified, ',' is used."},
   { name: 'sheet', type: String, description:
     "name of the excel sheet you want to load the data from. If no sheet is " +
     "specified the first sheet in the workbook will be used."},
@@ -81,6 +83,9 @@ const usage = getUsage(sections)
 var options;
 try {
   options  = commandLineArgs(optionDefinitions);
+
+  options.email = options.email == undefined ? process.env.TSI_EMAIL : options.email;
+  options.token = options.token == undefined ? process.env.TSI_API_TOKEN : options.token;
 } catch (error) {
   console.log(error.name);
   console.log("");
@@ -93,47 +98,38 @@ if (options.help) {
   process.exit(0);
 }
 
+
+if (options.email == undefined && options.fake != true) {
+  console.log("Please specify an email address used to connect to the TrueSight server.");
+  console.log(usage);
+  process.exit(1);
+}
+
+if (options.token == undefined && options.fake != true) {
+  console.log("Please specify a api token used to connect to the TrueSight server.");
+  console.log(usage);
+  process.exit(1);
+}
+
 if (options.file == undefined) {
   console.log("Please specify an excel file containing the data to be send to the TrueSight server.");
   console.log(usage);
   process.exit(1);
 }
 
-if (options.email == undefined) {
-  console.log("Please specify an email address used to connect to the TrueSight server.");
-  console.log(usage);
-  process.exit(1);
+if (options.provider == 'excel') {
+  if (options.map == undefined) {
+    console.log("Please specify a map file.");
+    console.log(usage);
+    process.exit(1)
+  }
 }
-
-if (options.token == undefined) {
-  console.log("Please specify a api token used to connect to the TrueSight server.");
-  console.log(usage);
-  process.exit(1);
-}
-
-if (options.token == undefined) {
-  console.log("Please specify a map file.");
-  console.log(usage);
-  process.exit(1)
-}
-
-
-// Read the map file
-var map;
-try {
-  map = JSON.parse(fs.readFileSync(options.map, 'utf8'));
-} catch (error) {
-  logger.error("An error occured reading map file ()");
-  logger.error(error);
-  process.exit(1);
-}
-
 
 // create a handle for the TSI server
 tsi = new TsiAPI({
   email: options.email,
   apiToken: options.token,
-  logger: logger
+  logger: log4js.getLogger("TsiAPI")
 });
 
 // when we exit we want to display some statistics
@@ -155,29 +151,34 @@ try {
     var ExcelDataProvider = require('./lib/ExcelDataProvider').provider;
     dataProvider = new ExcelDataProvider ({
       filename: options.file,
-      map: map,
+      map: options.map,
       startAt : options.start,
       endAt: options.end,
       sheet: options.sheet,
-      logger: logger
+      logger: log4js.getLogger("ExcelDataProvider")
     });
   } else if (options.provider == 'csv') {
-    var CsvdataProvider = require('./lib/CsvDataProvider').provider;
+    var CsvDataProvider = require('./lib/CsvDataProvider').provider;
     dataProvider = new CsvDataProvider({
       filename: options.file,
-      map: map,
+      map: options.map,
+      delimiter: options.delimiter,
       startAt: options.start,
       endAt: options.end,
-      logger: logger
+      logger: log4js.getLogger("CsvDataProvider")
     });
   } else {
     throw("The data provider spicified '"+options.provider+"' is not valid.");
   }
 
   // create the events using the specified dataprovider
-  tsi.createEvents(dataProvider, {
-    fake:options.fake}
+  var batch = tsi.createBatch(dataProvider, {
+    fake: options.fake}
   );
+
+  batch.start();
+  dataProvider.start();
+
 } catch (error) {
   logger.error(error);
 }

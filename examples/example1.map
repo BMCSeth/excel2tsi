@@ -10,6 +10,6 @@
     "name": "CoolCompany"
   },
   "fingerprintFields": ["title"],
-  "createdAt": "A",
-  "title": "B"
+  "createdAt": "${A}",
+  "title": "${B}"
 }
