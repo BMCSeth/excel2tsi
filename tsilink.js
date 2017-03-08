@@ -132,17 +132,6 @@ tsi = new TsiAPI({
   logger: log4js.getLogger("TsiAPI")
 });
 
-// when we exit we want to display some statistics
-process.on('exit', function(){
-  logger.info("First request at: " + tsi.statistics.firstRequestAt);
-  logger.info("Last responce at: " + tsi.statistics.lastResponceAt);
-  logger.info("Number of Requests: " + tsi.statistics.numberOfRequests);
-  logger.info("Number of Responces: " + tsi.statistics.numberOfResponces);
-  logger.info("Number of Errors: " + tsi.statistics.numberOfErrors);
-  logger.info("Number of Fatal Errors: " + tsi.statistics.numberOfFatalErrors);
-  logger.info("Avg Responces / sec: " + 1000 / (tsi.statistics.lastResponceAt - tsi.statistics.firstRequestAt) * tsi.statistics.numberOfResponces);
-})
-
 try {
   var dataProvider;
 

@@ -1,8 +1,8 @@
 {
-  "name": "excel2tsi",
+  "name": "tsilink",
   "version": "0.0.1",
-  "description": "Loads data from excel files into TrueSight pulse",
-  "main": "excel2tsi.js",
+  "description": "Loads data from external sources into TrueSight SaaS",
+  "main": "tsilink.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,7 +11,7 @@
     "url": "https://github.com/tsguru/excel2tsi"
   },
   "bin": {
-    "excel2tsi": "excel2tsi.js"
+    "tsilink": "tsilink.js"
   },
   "author": "Martin Tauber <martin_tauber@bmc.com> (http://www.bmc.com)",
   "license": "ISC",
