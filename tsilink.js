@@ -44,7 +44,9 @@ const optionDefinitions = [
     "specified the first sheet in the workbook will be used."},
   { name: 'fake', type: Boolean, description:
     "Do not send the data to the TSI server. Process the data and display the json "+
-    "that would be sent to the TSI server."}
+    "that would be sent to the TSI server."},
+  { name: 'verbose', type: Boolean, defaultValue: false, description: 
+    "Switching on this flag will display the data that is send to the TSI server."}
 ];
 
 const sections = [
@@ -162,12 +164,16 @@ try {
 
   // create the events using the specified dataprovider
   var batch = tsi.createBatch(dataProvider, {
-    fake: options.fake}
-  );
+    fake: options.fake,
+    verbose: options.verbose,
+    logger: log4js.getLogger("TsiBatch")
+  });
 
   batch.start();
   dataProvider.start();
 
 } catch (error) {
+  var stack = new Error().stack;
   logger.error(error);
+  logger.error( stack );
 }
