@@ -3,9 +3,7 @@
 const commandLineArgs = require('command-line-args');
 const getUsage = require('command-line-usage')
 
-var log4js = require('log4js');
-var logger = log4js.getLogger("TsiLink");
-
+const log4js = require('./lib/log4js-wrapper').wrapper;
 var TsiAPI = require('./lib/tsiapi').TsiAPI;
 
 const optionDefinitions = [
@@ -43,22 +41,28 @@ const optionDefinitions = [
     "name of the excel sheet you want to load the data from. If no sheet is " +
     "specified the first sheet in the workbook will be used."},
   { name: 'fake', type: Boolean, description:
-    "Do not send the data to the TSI server. Process the data and display the json "+
-    "that would be sent to the TSI server."},
+    "Do not send the data to the TSI server."},
   { name: 'verbose', type: Boolean, defaultValue: false, description: 
-    "Switching on this flag will display the data that is send to the TSI server."}
+    "Switching on this flag will display the data that is send to the TSI server."},
+  { name: 'reportInterval', type: Number, defaultValue: 10, description:
+    "interval in seconds in which statistics are logged to the log file."},
+  { name: 'logfile', type: String, description:
+    "the file used to log messages."},
+  { name: 'loglevel', type: String, defaultValue: 'INFO', description:
+    "the log level used to log messages. Valid log levels are 'ALL', 'FATAL', 'ERROR', "+
+    "'WARN', 'INFO', 'DEBUG', 'TRACE', or 'OFF'."}
 ];
 
 const sections = [
   {
-    header: 'Excel to TSI',
+    header: 'TSILink',
     content: 'Reads and excel file and sends the data to TrueSight Intelligence.'
   },
   {
     header: 'Synopsis',
     content: [
-      'excel2tsi --help',
-      'excel2tsi (--file|-f) <filename> (--email|-e) <email> (--token|-t) <apiToken> ' +
+      'tsilink --help',
+      'tsilink (--file|-f) <filename> (--email|-e) <email> (--token|-t) <apiToken> ' +
       '[(--map|-m) <filename>] [--start <startAtLine>] [--end <endAtLine>] ' +
       '[--sheet <sheetname>][--fake]'
     ]
@@ -70,7 +74,7 @@ const sections = [
   {
     header: 'Examples',
     content: [
-      'excel2tsi --file myevents.xlsx --email me@company.com --token theApiToken ' +
+      'tsilink --file myevents.xlsx --email me@company.com --token theApiToken ' +
       '--map mymap.json'
     ]
   },
@@ -127,6 +131,29 @@ if (options.provider == 'excel') {
   }
 }
 
+if (options.logfile != undefined) {
+  log4js.setFilename(options.logfile);
+}
+
+if (options.loglevel != 'ALL' &&
+  options.loglevel != 'FATAL' &&
+  options.loglevel != 'ERROR' &&
+  options.loglevel != 'WARN' &&
+  options.loglevel != 'INFO' &&
+  options.loglevel != 'DEBUG' &&
+  options.loglevel != 'TRACE' &&
+  options.loglevel != 'OFF') {
+
+  console.log("Please specify a valid log level.");
+  console.log(usage);
+
+  process.exit(1);
+} else {
+  log4js.setLevel(options.loglevel);
+}
+
+var logger = log4js.getLogger("TsiLink");
+
 // create a handle for the TSI server
 tsi = new TsiAPI({
   email: options.email,
@@ -166,6 +193,7 @@ try {
   var batch = tsi.createBatch(dataProvider, {
     fake: options.fake,
     verbose: options.verbose,
+    reportInterval: options.reportInterval,
     logger: log4js.getLogger("TsiBatch")
   });
 
