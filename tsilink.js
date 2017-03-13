@@ -161,6 +161,8 @@ tsi = new TsiAPI({
   logger: log4js.getLogger("TsiAPI")
 });
 
+var queue = [];
+
 try {
   var dataProvider;
 
@@ -173,6 +175,7 @@ try {
       startAt : options.start,
       endAt: options.end,
       sheet: options.sheet,
+      queue: queue,
       logger: log4js.getLogger("ExcelDataProvider")
     });
   } else if (options.provider == 'csv') {
@@ -183,6 +186,7 @@ try {
       delimiter: options.delimiter,
       startAt: options.start,
       endAt: options.end,
+      queue: queue,
       logger: log4js.getLogger("CsvDataProvider")
     });
   } else {
@@ -194,8 +198,10 @@ try {
     fake: options.fake,
     verbose: options.verbose,
     reportInterval: options.reportInterval,
+    queue: queue,
     logger: log4js.getLogger("TsiBatch")
   });
+
 
   batch.start();
   dataProvider.start();
